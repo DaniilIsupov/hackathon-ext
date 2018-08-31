@@ -1,0 +1,42 @@
+{
+  "name": "test",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "This extension ",
+  "homepage_url": "https://studio-alt.ru/",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_action": {
+    "default_title": "ext",
+    "default_popup": "src/popup/popup.html"
+  },
+  "background": {
+    "scripts": [
+      "src/background.js"
+    ],
+    "persistent": true
+  },
+  "permissions": [
+    "notifications",
+    "tabs",
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>",
+        "https://www.google.com/*"
+      ],
+      "css": [
+        "src/content-script/content-script.css"
+      ],
+      "js": [
+        "addition/jquery/jquery.js",
+        "src/content-script/content-script.js"
+      ]
+    }
+  ]
+}
