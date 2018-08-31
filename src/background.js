@@ -31,6 +31,60 @@ chrome.storage.sync.get('films', async (result) => {
  */
 async function parseFilms() {
   let films = [];
+  await $.get(`https://afisha.yandex.ru/kirov/selections/cinema-today?search-autoopen=no`, (response) => {
+    $(response).find('.i-page__item_loader_yes').map((index, el) => {
+      let url = 'https://afisha.yandex.ru/' + $(el).find('a[href]')[0].href.split('/').splice(3).join('/');
+      films.push({ url: url });
+    });
+  });
+  return films;
+}
+/**
+ * Получаем подробности по каждому фильму.
+ * @param {array} urls - массив ссылок на фильмы
+ */
+async function parseDetails(urls) {
+  let films = []; // массив фильмов
+  await urls.forEach(async (el, index) => {
+    await $.get(`${el.url}`, (response) => {
+      let title = $(response).find('.event-heading__title')[0].textContent.trim();
+      let image = $(response).find('.event-gallery__image')[0].style.backgroundImage.split('"')[1];
+      let cinema = []; // массив кинотеатров
+      let scheduleTable = $(response).find('.schedule-cinema-item');
+
+      for (let i = 0; i < scheduleTable.length; i++) {
+        let name = $(scheduleTable[i]).find('.place__title')[0].textContent.trim();
+        let schedule = $(scheduleTable[i]).find('.schedule-cinema-item__groups');
+        let time = []; // массив расписаний
+        let room = []; // массив, в котором указан номер зала и цена билета
+        // получаем расписание показов
+        for (let j = 0; j < schedule.length; j++) {
+          let arraySchedule = $(schedule[j]).find('.schedule-sessions__item');
+          for (let k = 0; k < arraySchedule.length; k++) {
+            // если фильм еще не начался, то можно узнать номер зала и цену
+            if (arraySchedule[k].localName.trim() == 'button') {
+              time.push($(arraySchedule[k]).find('span')[0].innerHTML.split('<')[0]);
+              room.push($(arraySchedule[k]).find('div')[0].textContent.trim());
+            } else {
+              time.push(arraySchedule[k].textContent.trim());
+              room.push('Цена не определена');
+            }
+          }
+        }
+        cinema.push({ name, time, room });
+      }
+      films.push({ title, cinema, image });
+    });
+  });
+  return films;
+}
+
+/**
+ * Получаем массив объектов.
+ * Пример: [{ url: "http://afisha.gid43.ru/films/view/id/3173/" }]
+ */
+async function GIDparseFilms() {
+  let films = [];
   await $.get(`http://afisha.gid43.ru/rubr/view/id/0/`, (response) => {
     $(response).find('.c-cinema').map((index, el) => {
       let url = $(el).find('a[href]')[0].href;
@@ -43,7 +97,7 @@ async function parseFilms() {
  * Получаем подробности по каждому фильму.
  * @param {array} urls - массив ссылок на фильмы
  */
-async function parseDetails(urls) {
+async function GIDparseDetails(urls) {
   let films = []; // массив фильмов
   await urls.forEach(async (el, index) => {
     await $.get(`${el.url}`, (response) => {
