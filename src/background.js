@@ -14,12 +14,15 @@ jQuery.ajaxSetup({ async: false });
 chrome.storage.sync.get('films', async (result) => {
   // информация считается устаревшей если ей более чем 24 часа
   if (!result.films || (result.films && new Date().getTime() > result.films.date + 1000 * 60 * 60 * 24)) {
-    console.log('Startparsing...');
+    console.log('Start parsing...');
     let films = await parseFilms();
     films = await parseDetails(films);
-    chrome.storage.sync.set({ 'films': { films: films, date: new Date().getTime() } }, () => {
-      console.log('write to storage');
-    });
+    console.log('films', films);
+    if (films.length) {
+      chrome.storage.sync.set({ 'films': { films: films, date: new Date().getTime() } }, () => {
+        console.log('write to storage');
+      });
+    }
   } else {
     console.log('result from storage', result.films);
   }
@@ -31,7 +34,7 @@ chrome.storage.sync.get('films', async (result) => {
  */
 async function parseFilms() {
   let films = [];
-  await $.get(`https://afisha.yandex.ru/kirov/selections/cinema-today?search-autoopen=no`, (response) => {
+  await $.get(`https://afisha.yandex.ru/kirov/cinema?source=calendar&preset=today`, (response) => {
     $(response).find('.i-page__item_loader_yes').map((index, el) => {
       let url = 'https://afisha.yandex.ru/' + $(el).find('a[href]')[0].href.split('/').splice(3).join('/');
       films.push({ url: url });
